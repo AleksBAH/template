@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Template Memorizer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #7c6af7;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+  }
+
+  /* TABS */
+  .tabs-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .tab-btn {
+    padding: 7px 18px;
+    border-radius: 20px;
+    border: 2px solid #7c6af7;
+    background: transparent;
+    color: #7c6af7;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tab-btn.active { background: #7c6af7; color: #fff; }
+  .tab-btn:hover:not(.active) { background: #2a2a4e; }
+  .tab-add-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid #2ecc71;
+    background: transparent;
+    color: #2ecc71;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .tab-add-btn:hover { background: #2ecc71; color: #0f0f1a; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: #1a1a2e;
+    border: 1px solid #7c6af7;
+    border-radius: 14px;
+    padding: 28px 32px;
+    width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .modal h3 { color: #7c6af7; font-size: 1.1rem; }
+  .modal input {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    font-size: 1rem;
+    outline: none;
+    width: 100%;
+  }
+  .modal input:focus { border-color: #7c6af7; }
+  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* EDITOR */
+  .template-editor {
+    background: #1a1a2e;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .template-editor label {
+    display: block;
+    margin-bottom: 8px;
+    color: #a0a0c0;
+    font-size: 0.88rem;
+  }
+  .template-editor textarea {
+    width: 100%;
+    min-height: 160px;
+    background: #0f0f1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #e0e0e0;
+    padding: 12px;
+    font-size: 0.95rem;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.7;
+  }
+  .template-editor textarea:focus { outline: none; border-color: #7c6af7; }
+
+  /* TEMPLATE HEADER */
+  .template-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .template-title {
+    font-size: 1.1rem;
+    color: #7c6af7;
+    font-weight: 600;
+  }
+  .btn-delete-tpl {
+    padding: 5px 14px;
+    border-radius: 16px;
+    border: 1px solid #c0392b;
+    background: transparent;
+    color: #c0392b;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: all 0.2s;
+  }
+  .btn-delete-tpl:hover { background: #c0392b; color: #fff; }
+
+  /* BUTTONS */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 9px 24px;
+    border-radius: 24px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: #7c6af7; color: #fff; }
+  .btn-primary:hover { background: #6355d4; }
+  .btn-secondary { background: #2a2a3e; color: #a0a0c0; border: 1px solid #444; }
+  .btn-secondary:hover { background: #333355; color: #fff; }
+  .btn-danger { background: #c0392b; color: #fff; }
+  .btn-danger:hover { background: #a93226; }
+  .btn-green { background: #27ae60; color: #fff; }
+  .btn-green:hover { background: #1e8449; }
+
+  /* READ MODE */
+  .read-mode {
+    background: #1a1a2e;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    line-height: 1.9;
+    font-size: 1.05rem;
+    color: #d0d0f0;
+    border: 1px solid #2a2a4e;
+  }
+  .read-sentence {
+    display: inline;
+  }
+
+  /* TRAIN MODE */
+  .train-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .sentence-block {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .sentence-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 2px solid #333;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-size: 0.97rem;
+    font-family: inherit;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+  }
+  .sentence-input:focus { border-color: #7c6af7; }
+  .sentence-input.error { border-color: #e74c3c; background: #2a1a1a; }
+  .sentence-input.correct { border-color: #2ecc71; background: #1a2a1a; color: #2ecc71; pointer-events: none; }
+  .original-sentence {
+    display: none;
+    font-size: 0.87rem;
+    color: #2ecc71;
+    padding: 5px 14px;
+    background: #0d1f0d;
+    border-radius: 6px;
+    border-left: 3px solid #2ecc71;
+  }
+  .original-sentence.show { display: block; }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hint-icon {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 50%;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .hint-icon.show { opacity: 1; }
+
+  .status-bar {
+    text-align: center;
+    font-size: 0.95rem;
+    color: #a0a0c0;
+    margin-bottom: 14px;
+  }
+  .status-bar span { color: #7c6af7; font-weight: bold; }
+
+  .complete-banner {
+    display: none;
+    text-align: center;
+    background: linear-gradient(135deg, #1a3a1a, #0d2a0d);
+    border: 2px solid #2ecc71;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    color: #2ecc71;
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  .complete-banner.show { display: block; }
+</style>
+</head>
+<body>
+
+<h1>📝 Template Memorizer</h1>
+
+<!-- ADD TEMPLATE MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>➕ Новый шаблон</h3>
+    <input type="text" id="modalNameInput" placeholder="Название шаблона..." maxlength="40" />
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="confirmAddTemplate()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="deleteModalOverlay">
+  <div class="modal">
+    <h3>🗑 Удалить шаблон?</h3>
+    <p id="deleteModalText" style="color:#a0a0c0;font-size:0.95rem;"></p>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Отмена</button>
+      <button class="btn btn-danger" onclick="confirmDeleteTemplate()">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrapper" id="tabsWrapper">
+  <button class="tab-add-btn" onclick="openModal()" title="Добавить шаблон">+</button>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="mainContent"></div>
+
+<script>
+const STORAGE_KEY = 'templateMemorizerV2';
+
+let templates = []; // [{name, text}]
+let currentTab = 0;
+let currentMode = 'edit'; // edit | read | train
+let sentenceStates = [];
+
+// ── Storage ──────────────────────────────────────────
+function loadStorage() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (d && Array.isArray(d.templates) && d.templates.length > 0) {
+      templates = d.templates;
+    } else {
+      templates = [{ name: 'Template 1', text: '' }];
+    }
+  } catch(e) {
+    templates = [{ name: 'Template 1', text: '' }];
+  }
+}
+
+function saveStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ templates }));
+}
+
+// ── Modal ─────────────────────────────────────────────
+function openModal() {
+  document.getElementById('modalNameInput').value = '';
+  document.getElementById('modalOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('modalNameInput').focus(), 100);
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+document.getElementById('modalNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmAddTemplate();
+  if (e.key === 'Escape') closeModal();
+});
+function confirmAddTemplate() {
+  let name = document.getElementById('modalNameInput').value.trim();
+  if (!name) name = 'Template ' + (templates.length + 1);
+  templates.push({ name, text: '' });
+  saveStorage();
+  currentTab = templates.length - 1;
+  currentMode = 'edit';
+  closeModal();
+  renderAll();
+}
+
+// ── Tabs ──────────────────────────────────────────────
+function renderTabs() {
+  const wrapper = document.getElementById('tabsWrapper');
+  // Remove all tab buttons (keep add btn)
+  [...wrapper.querySelectorAll('.tab-btn')].forEach(b => b.remove());
+  const addBtn = wrapper.querySelector('.tab-add-btn');
+
+  templates.forEach((tpl, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i === currentTab ? ' active' : '');
+    btn.textContent = tpl.name;
+    btn.title = tpl.name;
+    btn.onclick = () => switchTab(i);
+    wrapper.insertBefore(btn, addBtn);
+  });
+}
+
+function switchTab(idx) {
+  if (currentMode === 'edit') {
+    const ta = document.getElementById('templateTextarea');
+    if (ta) templates[currentTab].text = ta.value;
+    saveStorage();
+  }
+  currentTab = idx;
+  currentMode = 'edit';
+  renderAll();
+}
+
+// ── Sentence splitting ────────────────────────────────
+function splitSentences(text) {
+  // Split by sentence-ending punctuation, keep delimiter attached
+  const raw = text.match(/[^.!?]+[.!?]+[\s]*/g) || [];
+  const sentences = raw.map(s => s.trim()).filter(s => s.length > 0);
+  // If there's remaining text without punctuation, add it too
+  const joined = raw.join('');
+  const remaining = text.slice(joined.length).trim();
+  if (remaining.length > 0) sentences.push(remaining);
+  return sentences;
+}
+
+// ── Main render ───────────────────────────────────────
+function renderAll() {
+  renderTabs();
+  renderContent();
+}
+
+function renderContent() {
+  const tpl = templates[currentTab];
+  const hasContent = tpl.text.trim().length > 0;
+  const content = document.getElementById('mainContent');
+  content.innerHTML = '';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'template-header';
+  const title = document.createElement('div');
+  title.className = 'template-title';
+  title.textContent = '📄 ' + tpl.name;
+  header.appendChild(title);
+  if (templates.length > 1) {
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-delete-tpl';
+    delBtn.textContent = '🗑 Удалить шаблон';
+    delBtn.onclick = deleteCurrentTemplate;
+    header.appendChild(delBtn);
+  }
+  content.appendChild(header);
+
+  // Buttons
+  const btnRow = document.createElement('div');
+  btnRow.className = 'btn-row';
+
+  if (currentMode !== 'edit') {
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-secondary';
+    editBtn.textContent = '✏️ Редактировать';
+    editBtn.onclick = () => { currentMode = 'edit'; renderContent(); };
+    btnRow.appendChild(editBtn);
+  }
+  if (hasContent && currentMode !== 'read') {
+    const readBtn = document.createElement('button');
+    readBtn.className = 'btn btn-secondary';
+    readBtn.textContent = '👁 Читать';
+    readBtn.onclick = () => { currentMode = 'read'; renderContent(); };
+    btnRow.appendChild(readBtn);
+  }
+  if (hasContent && currentMode !== 'train') {
+    const trainBtn = document.createElement('button');
+    trainBtn.className = 'btn btn-primary';
+    trainBtn.textContent = '🏋️ Тренировка';
+    trainBtn.onclick = () => { currentMode = 'train'; sentenceStates = []; renderContent(); };
+    btnRow.appendChild(trainBtn);
+  }
+  if (currentMode === 'edit') {
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn btn-green';
+    saveBtn.textContent = '💾 Сохранить';
+    saveBtn.onclick = saveTemplate;
+    btnRow.appendChild(saveBtn);
+  }
+  if (currentMode === 'train') {
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'btn btn-danger';
+    resetBtn.textContent = '🔄 Сбросить';
+    resetBtn.onclick = () => { sentenceStates = []; renderContent(); };
+    btnRow.appendChild(resetBtn);
+  }
+  content.appendChild(btnRow);
+
+  // Mode content
+  if (currentMode === 'edit') renderEdit(content, tpl);
+  else if (currentMode === 'read') renderRead(content, tpl);
+  else if (currentMode === 'train') renderTrain(content, tpl);
+}
+
+function renderEdit(container, tpl) {
+  const editor = document.createElement('div');
+  editor.className = 'template-editor';
+
+  const label = document.createElement('label');
+  label.textContent = '✏️ Текст шаблона (предложения разделяются точкой/! /? — каждое станет отдельным полем):';
+  editor.appendChild(label);
+
+  const ta = document.createElement('textarea');
+  ta.id = 'templateTextarea';
+  ta.placeholder = 'Введите текст шаблона здесь. Каждое предложение будет отдельным полем для тренировки! Используйте точки, восклицательные и вопросительные знаки.';
+  ta.value = tpl.text;
+  editor.appendChild(ta);
+  container.appendChild(editor);
+}
+
+function renderRead(container, tpl) {
+  const div = document.createElement('div');
+  div.className = 'read-mode';
+  const sentences = splitSentences(tpl.text);
+  if (sentences.length === 0) {
+    div.textContent = tpl.text;
+  } else {
+    sentences.forEach((s, i) => {
+      const span = document.createElement('span');
+      span.className = 'read-sentence';
+      span.textContent = s + (i < sentences.length - 1 ? ' ' : '');
+      div.appendChild(span);
+    });
+  }
+  container.appendChild(div);
+}
+
+function renderTrain(container, tpl) {
+  const sentences = splitSentences(tpl.text);
+  if (sentences.length === 0) {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'text-align:center;color:#a0a0c0;padding:20px;';
+    msg.textContent = 'Нет текста для тренировки.';
+    container.appendChild(msg);
+    return;
+  }
+
+  if (sentenceStates.length !== sentences.length) {
+    sentenceStates = new Array(sentences.length).fill(false);
+  }
+
+  // Status
+  const statusBar = document.createElement('div');
+  statusBar.className = 'status-bar';
+  statusBar.id = 'statusBar';
+  const done = sentenceStates.filter(Boolean).length;
+  statusBar.innerHTML = `Прогресс: <span id="progressText">${done} / ${sentences.length}</span> предложений`;
+  container.appendChild(statusBar);
+
+  // Complete banner
+  const banner = document.createElement('div');
+  banner.className = 'complete-banner' + (done === sentences.length ? ' show' : '');
+  banner.id = 'completeBanner';
+  banner.textContent = '🎉 Отлично! Весь шаблон написан правильно!';
+  container.appendChild(banner);
+
+  // Train blocks
+  const trainDiv = document.createElement('div');
+  trainDiv.className = 'train-mode';
+
+  sentences.forEach((sentence, i) => {
+    const block = document.createElement('div');
+    block.className = 'sentence-block';
+
+    const inputRow = document.createElement('div');
+    inputRow.className = 'input-row';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'sentence-input' + (sentenceStates[i] ? ' correct' : '');
+    input.placeholder = `Предложение ${i + 1}…`;
+    input.autocomplete = 'off';
+    input.autocorrect = 'off';
+    input.autocapitalize = 'off';
+    input.spellcheck = false;
+    if (sentenceStates[i]) {
+      input.value = sentence;
+      input.readOnly = true;
+    }
+
+    const hint = document.createElement('span');
+    hint.className = 'hint-icon';
+    hint.id = `hint-${i}`;
+    hint.textContent = '✗';
+
+    input.addEventListener('input', () => checkSentence(i, input, sentence, hint));
+
+    inputRow.appendChild(input);
+    inputRow.appendChild(hint);
+    block.appendChild(inputRow);
+
+    const orig = document.createElement('div');
+    orig.className = 'original-sentence' + (sentenceStates[i] ? ' show' : '');
+    orig.id = `orig-${i}`;
+    orig.textContent = '✓ ' + sentence;
+    block.appendChild(orig);
+
+    trainDiv.appendChild(block);
+  });
+
+  container.appendChild(trainDiv);
+}
+
+function checkSentence(i, input, original, hint) {
+  if (sentenceStates[i]) return;
+  const val = input.value;
+
+  if (val === original) {
+    sentenceStates[i] = true;
+    input.classList.remove('error');
+    input.classList.add('correct');
+    input.readOnly = true;
+    hint.classList.remove('show');
+    document.getElementById(`orig-${i}`).classList.add('show');
+    updateProgress();
+  } else if (val.length > 0) {
+    const isPrefix = original.startsWith(val);
+    input.classList.toggle('error', !isPrefix);
+    hint.classList.toggle('show', !isPrefix);
+  } else {
+    input.classList.remove('error');
+    hint.classList.remove('show');
+  }
+}
+
+function updateProgress() {
+  const total = sentenceStates.length;
+  const done = sentenceStates.filter(Boolean).length;
+  const pt = document.getElementById('progressText');
+  if (pt) pt.textContent = `${done} / ${total}`;
+  if (done === total && total > 0) {
+    const banner = document.getElementById('completeBanner');
+    if (banner) banner.classList.add('show');
+  }
+}
+
+function saveTemplate() {
+  const ta = document.getElementById('templateTextarea');
+  if (ta) templates[currentTab].text = ta.value.trim();
+  saveStorage();
+  currentMode = templates[currentTab].text.length > 0 ? 'read' : 'edit';
+  renderAll();
+}
+
+function deleteCurrentTemplate() {
+  if (templates.length <= 1) return;
+  document.getElementById('deleteModalText').textContent = `Вы уверены, что хотите удалить "${templates[currentTab].name}"? Это действие нельзя отменить.`;
+  document.getElementById('deleteModalOverlay').classList.add('show');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModalOverlay').classList.remove('show');
+}
+
+function confirmDeleteTemplate() {
+  closeDeleteModal();
+  templates.splice(currentTab, 1);
+  currentTab = Math.max(0, currentTab - 1);
+  currentMode = 'edit';
+  saveStorage();
+  renderAll();
+}
+
+// ── Init ──────────────────────────────────────────────
+loadStorage();
+renderAll();
+</script>
+</body>
+</html>
