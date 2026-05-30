@@ -19,7 +19,50 @@
     margin-bottom: 20px;
     font-size: 1.8rem;
     letter-spacing: 1px;
+    cursor: pointer;
+    user-select: none;
   }
+  h1:hover { color: #a090ff; }
+
+  /* FLOATING TIMER */
+  #floatingTimer {
+    display: none;
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a2e;
+    border: 2px solid #7c6af7;
+    border-radius: 40px;
+    padding: 8px 24px;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 4px 24px rgba(124,106,247,0.3);
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+  #floatingTimer.visible { display: flex; }
+  .timer-val { color: #7c6af7; font-weight: bold; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+  .timer-errors { color: #e74c3c; font-weight: bold; }
+  .timer-label { color: #a0a0c0; font-size: 0.85rem; }
+  .btn-hint {
+    padding: 4px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #f39c12;
+    background: transparent;
+    color: #f39c12;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-hint:hover { background: #f39c12; color: #0f0f1a; }
+  .btn-hint:active { transform: scale(0.95); }
+  .hint-used { color: #e74c3c !important; border-color: #e74c3c !important; }
+  .timer-hints { color: #f39c12; font-weight: bold; }
 
   /* TABS */
   .tabs-wrapper {
@@ -173,6 +216,8 @@
   .btn-danger:hover { background: #a93226; }
   .btn-green { background: #27ae60; color: #fff; }
   .btn-green:hover { background: #1e8449; }
+  .btn-gold { background: #f39c12; color: #fff; }
+  .btn-gold:hover { background: #d68910; }
 
   /* READ MODE */
   .read-mode {
@@ -185,9 +230,6 @@
     color: #d0d0f0;
     border: 1px solid #2a2a4e;
   }
-  .read-sentence {
-    display: inline;
-  }
 
   /* TRAIN MODE */
   .train-mode {
@@ -196,11 +238,7 @@
     gap: 10px;
     margin-bottom: 20px;
   }
-  .sentence-block {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
+  .sentence-block { display: flex; flex-direction: column; gap: 5px; }
   .sentence-input {
     width: 100%;
     padding: 10px 14px;
@@ -226,12 +264,7 @@
     border-left: 3px solid #2ecc71;
   }
   .original-sentence.show { display: block; }
-
-  .input-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+  .input-row { display: flex; align-items: center; gap: 8px; }
   .hint-icon {
     flex-shrink: 0;
     width: 22px; height: 22px;
@@ -263,15 +296,70 @@
     padding: 20px;
     margin-bottom: 20px;
     color: #2ecc71;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: bold;
   }
   .complete-banner.show { display: block; }
+  .complete-banner .result-line { margin-top: 8px; font-size: 0.95rem; color: #a0f0a0; }
+
+  /* RECORDS PAGE */
+  #recordsPage { display: none; }
+  #recordsPage.show { display: block; }
+  .records-header {
+    text-align: center;
+    color: #f39c12;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  .records-table-wrap {
+    background: #1a1a2e;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .records-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+  }
+  .records-table th {
+    color: #7c6af7;
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+    white-space: nowrap;
+  }
+  .records-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #222;
+    color: #d0d0e0;
+    white-space: nowrap;
+  }
+  .records-table tr:last-child td { border-bottom: none; }
+  .records-table tr.best td { color: #f39c12; }
+  .records-table tr.best td:first-child::before { content: '🏆 '; }
+  .badge-best { background: #f39c12; color: #0f0f1a; border-radius: 8px; padding: 1px 7px; font-size: 0.78rem; font-weight: bold; margin-left: 6px; }
+  .badge-new { background: #2ecc71; color: #0f0f1a; border-radius: 8px; padding: 1px 7px; font-size: 0.78rem; font-weight: bold; margin-left: 6px; }
+  .no-records { text-align: center; color: #555; padding: 30px; font-size: 1rem; }
+  .tpl-section-title { color: #7c6af7; font-size: 1rem; font-weight: 600; margin: 18px 0 8px; }
 </style>
 </head>
 <body>
 
-<h1>📝 Template Memorizer</h1>
+<!-- FLOATING TIMER -->
+<div id="floatingTimer">
+  <span class="timer-label">⏱</span>
+  <span class="timer-val" id="timerDisplay">00:00</span>
+  <span class="timer-label">Ошибок:</span>
+  <span class="timer-errors" id="timerErrors">0</span>
+  <span class="timer-label">Подсказок:</span>
+  <span class="timer-hints" id="timerHints">0</span>
+  <button class="btn-hint" id="hintBtn" onclick="useHint()">💡 Подсказка</button>
+</div>
+
+<h1 id="mainTitle" onclick="toggleRecordsPage()">📝 Template Memorizer</h1>
 
 <!-- ADD TEMPLATE MODAL -->
 <div class="modal-overlay" id="modalOverlay">
@@ -297,21 +385,45 @@
   </div>
 </div>
 
-<!-- TABS -->
-<div class="tabs-wrapper" id="tabsWrapper">
-  <button class="tab-add-btn" onclick="openModal()" title="Добавить шаблон">+</button>
+<!-- RECORDS PAGE -->
+<div id="recordsPage">
+  <div class="records-header">🏆 Таблица рекордов</div>
+  <div id="recordsContent"></div>
+  <div style="text-align:center;margin-top:10px;">
+    <button class="btn btn-secondary" onclick="toggleRecordsPage()">← Назад</button>
+  </div>
 </div>
 
-<!-- MAIN CONTENT -->
-<div id="mainContent"></div>
+<!-- MAIN APP -->
+<div id="appContent">
+  <!-- TABS -->
+  <div class="tabs-wrapper" id="tabsWrapper">
+    <button class="tab-add-btn" onclick="openModal()" title="Добавить шаблон">+</button>
+  </div>
+  <!-- MAIN CONTENT -->
+  <div id="mainContent"></div>
+</div>
 
 <script>
-const STORAGE_KEY = 'templateMemorizerV2';
+const STORAGE_KEY = 'templateMemorizerV3';
+const RECORDS_KEY = 'templateMemorizerRecords';
 
-let templates = []; // [{name, text}]
+let templates = [];
 let currentTab = 0;
-let currentMode = 'edit'; // edit | read | train
+let currentMode = 'edit';
 let sentenceStates = [];
+let showingRecords = false;
+
+// Timer state
+let timerInterval = null;
+let timerStarted = false;
+let timerSeconds = 0;
+let errorCount = 0;
+let hintCount = 0;
+let sessionActive = false;
+
+// Track sentences for hint
+let currentSentences = [];
 
 // ── Storage ──────────────────────────────────────────
 function loadStorage() {
@@ -329,6 +441,196 @@ function loadStorage() {
 
 function saveStorage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ templates }));
+}
+
+function loadRecords() {
+  try {
+    return JSON.parse(localStorage.getItem(RECORDS_KEY)) || {};
+  } catch(e) { return {}; }
+}
+
+function saveRecord(templateName, seconds, errors, hints) {
+  const records = loadRecords();
+  if (!records[templateName]) records[templateName] = [];
+  const entry = {
+    time: seconds,
+    errors: errors,
+    hints: hints || 0,
+    date: new Date().toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' })
+  };
+  records[templateName].unshift(entry);
+  // Keep last 20 per template
+  if (records[templateName].length > 20) records[templateName] = records[templateName].slice(0, 20);
+  localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
+  return records[templateName];
+}
+
+// ── Timer ─────────────────────────────────────────────
+function startTimer() {
+  if (timerStarted) return;
+  timerStarted = true;
+  sessionActive = true;
+  timerSeconds = 0;
+  errorCount = 0;
+  document.getElementById('timerErrors').textContent = '0';
+  document.getElementById('timerDisplay').textContent = '00:00';
+  document.getElementById('floatingTimer').classList.add('visible');
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+    const s = String(timerSeconds % 60).padStart(2, '0');
+    document.getElementById('timerDisplay').textContent = m + ':' + s;
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  timerStarted = false;
+}
+
+function resetTimer() {
+  stopTimer();
+  timerSeconds = 0;
+  errorCount = 0;
+  hintCount = 0;
+  sessionActive = false;
+  document.getElementById('floatingTimer').classList.remove('visible');
+  document.getElementById('timerDisplay').textContent = '00:00';
+  document.getElementById('timerErrors').textContent = '0';
+  document.getElementById('timerHints').textContent = '0';
+}
+
+function addError() {
+  errorCount++;
+  document.getElementById('timerErrors').textContent = errorCount;
+}
+
+function useHint() {
+  if (!timerStarted && !sessionActive) return;
+  // Find first incomplete input
+  const allInputs = document.querySelectorAll('.sentence-input');
+  let targetInput = null;
+  let targetIdx = -1;
+  for (let k = 0; k < allInputs.length; k++) {
+    if (!allInputs[k].classList.contains('correct')) {
+      targetInput = allInputs[k];
+      targetIdx = k;
+      break;
+    }
+  }
+  if (!targetInput || targetIdx < 0 || targetIdx >= currentSentences.length) return;
+
+  const original = currentSentences[targetIdx];
+  const current = targetInput.value;
+
+  // Find longest correct prefix
+  let prefixLen = 0;
+  for (let k = 0; k < Math.min(current.length, original.length); k++) {
+    if (current[k] === original[k]) prefixLen = k + 1;
+    else break;
+  }
+
+  // Add one more character from original
+  if (prefixLen < original.length) {
+    targetInput.value = original.slice(0, prefixLen + 1);
+    targetInput.dispatchEvent(new Event('input'));
+  }
+
+  // Count hint
+  hintCount++;
+  document.getElementById('timerHints').textContent = hintCount;
+
+  // Flash button orange → back
+  const btn = document.getElementById('hintBtn');
+  btn.style.background = '#f39c12';
+  btn.style.color = '#0f0f1a';
+  setTimeout(() => {
+    btn.style.background = '';
+    btn.style.color = '';
+  }, 300);
+
+  targetInput.focus();
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m > 0) return `${m} мин ${s} сек`;
+  return `${s} сек`;
+}
+
+// ── Records Page ──────────────────────────────────────
+function toggleRecordsPage() {
+  showingRecords = !showingRecords;
+  document.getElementById('recordsPage').classList.toggle('show', showingRecords);
+  document.getElementById('appContent').style.display = showingRecords ? 'none' : '';
+  if (showingRecords) renderRecordsPage();
+}
+
+function renderRecordsPage() {
+  const records = loadRecords();
+  const container = document.getElementById('recordsContent');
+  container.innerHTML = '';
+
+  const tplNames = templates.map(t => t.name);
+  let hasAny = false;
+
+  tplNames.forEach(name => {
+    const entries = records[name];
+    if (!entries || entries.length === 0) return;
+    hasAny = true;
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'tpl-section-title';
+    titleEl.textContent = '📄 ' + name;
+    container.appendChild(titleEl);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'records-table-wrap';
+
+    const table = document.createElement('table');
+    table.className = 'records-table';
+    table.innerHTML = `<thead><tr>
+      <th>#</th>
+      <th>Дата</th>
+      <th>Время</th>
+      <th>Ошибок</th>
+      <th>Оценка</th>
+    </tr></thead>`;
+
+    const tbody = document.createElement('tbody');
+
+    // Find best (min time with min errors as tiebreak)
+    let bestIdx = 0;
+    entries.forEach((e, i) => {
+      if (e.time < entries[bestIdx].time || (e.time === entries[bestIdx].time && e.errors < entries[bestIdx].errors)) bestIdx = i;
+    });
+
+    entries.forEach((e, i) => {
+      const tr = document.createElement('tr');
+      if (i === bestIdx) tr.className = 'best';
+      const score = Math.max(0, 1000 - e.time * 2 - e.errors * 10);
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${e.date}</td>
+        <td>${formatTime(e.time)}</td>
+        <td>${e.errors}</td>
+        <td>${score} очков${i === bestIdx ? '<span class="badge-best">ЛУЧШИЙ</span>' : ''}${i === 0 ? '<span class="badge-new">НОВЫЙ</span>' : ''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    container.appendChild(wrap);
+  });
+
+  if (!hasAny) {
+    const msg = document.createElement('div');
+    msg.className = 'no-records';
+    msg.textContent = 'Пока нет записей. Пройди тренировку, чтобы появились рекорды!';
+    container.appendChild(msg);
+  }
 }
 
 // ── Modal ─────────────────────────────────────────────
@@ -358,10 +660,8 @@ function confirmAddTemplate() {
 // ── Tabs ──────────────────────────────────────────────
 function renderTabs() {
   const wrapper = document.getElementById('tabsWrapper');
-  // Remove all tab buttons (keep add btn)
   [...wrapper.querySelectorAll('.tab-btn')].forEach(b => b.remove());
   const addBtn = wrapper.querySelector('.tab-add-btn');
-
   templates.forEach((tpl, i) => {
     const btn = document.createElement('button');
     btn.className = 'tab-btn' + (i === currentTab ? ' active' : '');
@@ -378,6 +678,7 @@ function switchTab(idx) {
     if (ta) templates[currentTab].text = ta.value;
     saveStorage();
   }
+  resetTimer();
   currentTab = idx;
   currentMode = 'edit';
   renderAll();
@@ -385,10 +686,8 @@ function switchTab(idx) {
 
 // ── Sentence splitting ────────────────────────────────
 function splitSentences(text) {
-  // Split by sentence-ending punctuation, keep delimiter attached
   const raw = text.match(/[^.!?]+[.!?]+[\s]*/g) || [];
   const sentences = raw.map(s => s.trim()).filter(s => s.length > 0);
-  // If there's remaining text without punctuation, add it too
   const joined = raw.join('');
   const remaining = text.slice(joined.length).trim();
   if (remaining.length > 0) sentences.push(remaining);
@@ -431,21 +730,21 @@ function renderContent() {
     const editBtn = document.createElement('button');
     editBtn.className = 'btn btn-secondary';
     editBtn.textContent = '✏️ Редактировать';
-    editBtn.onclick = () => { currentMode = 'edit'; renderContent(); };
+    editBtn.onclick = () => { resetTimer(); currentMode = 'edit'; renderContent(); };
     btnRow.appendChild(editBtn);
   }
   if (hasContent && currentMode !== 'read') {
     const readBtn = document.createElement('button');
     readBtn.className = 'btn btn-secondary';
     readBtn.textContent = '👁 Читать';
-    readBtn.onclick = () => { currentMode = 'read'; renderContent(); };
+    readBtn.onclick = () => { resetTimer(); currentMode = 'read'; renderContent(); };
     btnRow.appendChild(readBtn);
   }
   if (hasContent && currentMode !== 'train') {
     const trainBtn = document.createElement('button');
     trainBtn.className = 'btn btn-primary';
     trainBtn.textContent = '🏋️ Тренировка';
-    trainBtn.onclick = () => { currentMode = 'train'; sentenceStates = []; renderContent(); };
+    trainBtn.onclick = () => { resetTimer(); currentMode = 'train'; sentenceStates = []; renderContent(); };
     btnRow.appendChild(trainBtn);
   }
   if (currentMode === 'edit') {
@@ -459,12 +758,17 @@ function renderContent() {
     const resetBtn = document.createElement('button');
     resetBtn.className = 'btn btn-danger';
     resetBtn.textContent = '🔄 Сбросить';
-    resetBtn.onclick = () => { sentenceStates = []; renderContent(); };
+    resetBtn.onclick = () => { resetTimer(); sentenceStates = []; renderContent(); };
     btnRow.appendChild(resetBtn);
+
+    const recBtn = document.createElement('button');
+    recBtn.className = 'btn btn-gold';
+    recBtn.textContent = '🏆 Рекорды';
+    recBtn.onclick = toggleRecordsPage;
+    btnRow.appendChild(recBtn);
   }
   content.appendChild(btnRow);
 
-  // Mode content
   if (currentMode === 'edit') renderEdit(content, tpl);
   else if (currentMode === 'read') renderRead(content, tpl);
   else if (currentMode === 'train') renderTrain(content, tpl);
@@ -473,11 +777,9 @@ function renderContent() {
 function renderEdit(container, tpl) {
   const editor = document.createElement('div');
   editor.className = 'template-editor';
-
   const label = document.createElement('label');
-  label.textContent = '✏️ Текст шаблона (предложения разделяются точкой/! /? — каждое станет отдельным полем):';
+  label.textContent = '✏️ Текст шаблона (каждое предложение — отдельное поле в тренировке):';
   editor.appendChild(label);
-
   const ta = document.createElement('textarea');
   ta.id = 'templateTextarea';
   ta.placeholder = 'Введите текст шаблона здесь. Каждое предложение будет отдельным полем для тренировки! Используйте точки, восклицательные и вопросительные знаки.';
@@ -495,7 +797,6 @@ function renderRead(container, tpl) {
   } else {
     sentences.forEach((s, i) => {
       const span = document.createElement('span');
-      span.className = 'read-sentence';
       span.textContent = s + (i < sentences.length - 1 ? ' ' : '');
       div.appendChild(span);
     });
@@ -505,6 +806,7 @@ function renderRead(container, tpl) {
 
 function renderTrain(container, tpl) {
   const sentences = splitSentences(tpl.text);
+  currentSentences = sentences;
   if (sentences.length === 0) {
     const msg = document.createElement('div');
     msg.style.cssText = 'text-align:center;color:#a0a0c0;padding:20px;';
@@ -529,7 +831,6 @@ function renderTrain(container, tpl) {
   const banner = document.createElement('div');
   banner.className = 'complete-banner' + (done === sentences.length ? ' show' : '');
   banner.id = 'completeBanner';
-  banner.textContent = '🎉 Отлично! Весь шаблон написан правильно!';
   container.appendChild(banner);
 
   // Train blocks
@@ -561,7 +862,13 @@ function renderTrain(container, tpl) {
     hint.id = `hint-${i}`;
     hint.textContent = '✗';
 
-    input.addEventListener('input', () => checkSentence(i, input, sentence, hint));
+    // Start timer on first keystroke in first input
+    input.addEventListener('input', () => {
+      if (i === 0 && !timerStarted && !sentenceStates[0]) {
+        startTimer();
+      }
+      checkSentence(i, input, sentence, hint, sentences.length, tpl.name);
+    });
 
     inputRow.appendChild(input);
     inputRow.appendChild(hint);
@@ -577,9 +884,16 @@ function renderTrain(container, tpl) {
   });
 
   container.appendChild(trainDiv);
+
+  // If already complete (after reset+redo), show banner
+  if (done === sentences.length && sentences.length > 0) {
+    showCompleteBanner(banner, timerSeconds, errorCount);
+  }
 }
 
-function checkSentence(i, input, original, hint) {
+let lastErrorState = {};
+
+function checkSentence(i, input, original, hint, total, tplName) {
   if (sentenceStates[i]) return;
   const val = input.value;
 
@@ -589,27 +903,52 @@ function checkSentence(i, input, original, hint) {
     input.classList.add('correct');
     input.readOnly = true;
     hint.classList.remove('show');
+    lastErrorState[i] = false;
     document.getElementById(`orig-${i}`).classList.add('show');
-    updateProgress();
+    updateProgress(total, tplName);
   } else if (val.length > 0) {
     const isPrefix = original.startsWith(val);
-    input.classList.toggle('error', !isPrefix);
-    hint.classList.toggle('show', !isPrefix);
+    const hasError = !isPrefix;
+    input.classList.toggle('error', hasError);
+    hint.classList.toggle('show', hasError);
+    // Count error only when transitioning from ok to error
+    if (hasError && !lastErrorState[i]) {
+      addError();
+    }
+    lastErrorState[i] = hasError;
   } else {
     input.classList.remove('error');
     hint.classList.remove('show');
+    lastErrorState[i] = false;
   }
 }
 
-function updateProgress() {
-  const total = sentenceStates.length;
+function updateProgress(total, tplName) {
   const done = sentenceStates.filter(Boolean).length;
   const pt = document.getElementById('progressText');
   if (pt) pt.textContent = `${done} / ${total}`;
+
   if (done === total && total > 0) {
+    stopTimer();
+    const finalTime = timerSeconds;
+    const finalErrors = errorCount;
+    const finalHints = hintCount;
+    saveRecord(tplName, finalTime, finalErrors, finalHints);
+
     const banner = document.getElementById('completeBanner');
-    if (banner) banner.classList.add('show');
+    if (banner) showCompleteBanner(banner, finalTime, finalErrors, finalHints);
   }
+}
+
+function showCompleteBanner(banner, seconds, errors) {
+  const score = Math.max(0, 1000 - seconds * 2 - errors * 10);
+  banner.innerHTML = `
+    🎉 Отлично! Весь шаблон написан правильно!
+    <div class="result-line">⏱ Время: <b>${formatTime(seconds)}</b>  |  ❌ Ошибок: <b>${errors}</b>  |  ⭐ Очков: <b>${score}</b></div>
+    <div class="result-line" style="margin-top:6px;font-size:0.85rem;color:#7c6af7;">Нажми на заголовок <b>📝 Template Memorizer</b> чтобы увидеть таблицу рекордов</div>
+  `;
+  banner.classList.add('show');
+  document.getElementById('floatingTimer').classList.remove('visible');
 }
 
 function saveTemplate() {
@@ -635,6 +974,7 @@ function confirmDeleteTemplate() {
   templates.splice(currentTab, 1);
   currentTab = Math.max(0, currentTab - 1);
   currentMode = 'edit';
+  resetTimer();
   saveStorage();
   renderAll();
 }
